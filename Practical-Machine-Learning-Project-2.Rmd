@@ -1,0 +1,120 @@
+---
+title: Prediction Assignment Writeup (Course Practical Machine Learning. Data Science
+  Specialization Course by Johns Hopkins University)
+author: "José Tapiz Arrondo AKA Pachi Tapiz Arrondo AKA PTA"
+date: "2025-03-30"
+output: html_document
+---
+
+
+```markdown
+---
+title: Prediction Assignment Writeup (Course Practical Machine Learning. Data Science
+  Specialization Course by Johns Hopkins University)
+author: "José Tapiz Arrondo AKA Pachi Tapiz Arrondo AKA PTA"
+date: "2025-03-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```
+## Step 1: Load the Data
+
+First, I'll need to load the training and test data into your R environment.
+
+```{r load-data}
+# Load necessary libraries
+library(caret)
+library(randomForest)
+
+# Load the training and test data
+train_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+test_url <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+train_data <- read.csv(train_url, na.strings = c("NA", "#DIV/0!", ""))
+test_data <- read.csv(test_url, na.strings = c("NA", "#DIV/0!", ""))
+```
+
+## Step 2: Data Preprocessing
+
+Clean the data by handling missing values and selecting relevant features.
+
+```{r data-preprocessing}
+# Remove columns with too many missing values
+train_data <- train_data[, colSums(is.na(train_data)) < 0.9 * nrow(train_data)]
+test_data <- test_data[, colnames(test_data) %in% colnames(train_data)]
+
+# Remove irrelevant columns
+irrelevant_columns <- c("user_name", "raw_timestamp_part_1", "raw_timestamp_part_2", "cvtd_timestamp", "new_window", "num_window")
+train_data <- train_data[, !(colnames(train_data) %in% irrelevant_columns)]
+test_data <- test_data[, !(colnames(test_data) %in% irrelevant_columns)]
+```
+
+## Step 3: Split the Data
+
+Split the training data into training and validation sets.
+
+```{r split-data}
+set.seed(42)
+# Install the caret package if you haven't already
+if (!require(caret)) install.packages("caret")
+
+# Load the caret package
+library(caret)
+
+# Now you can use the createDataPartition function
+inTrain <- createDataPartition(train_data$classe, p = 0.7, list = FALSE)
+training <- train_data[inTrain, ]
+validation <- train_data[-inTrain, ]
+```
+
+## Step 4: Train a Model
+
+Train a machine learning model, such as a Random Forest classifier.
+
+```{r train-model}
+# Ensure the 'classe' variable is treated as a factor
+training$classe <- as.factor(training$classe)
+validation$classe <- as.factor(validation$classe)
+
+# Train the Random Forest model
+model <- randomForest(classe ~ ., data = training, ntree = 100)
+```
+
+## Step 5: Evaluate the Model
+
+Evaluate the model using the validation set.
+
+```{r evaluate-model}
+predictions <- predict(model, validation)
+confusionMatrix(predictions, validation$classe)
+```
+
+## Step 6: Make Predictions on Test Data
+
+Use the trained model to make predictions on the test data.
+
+```{r make-predictions}
+test_predictions <- predict(model, test_data)
+print(test_predictions)
+```
+
+## Step 7: Cross-Validation
+
+Use cross-validation to get a better estimate of the model's performance.
+
+```{r cross-validation}
+control <- trainControl(method = "cv", number = 5)
+cv_model <- train(classe ~ ., data = training, method = "rf", trControl = control)
+print(cv_model)
+```
+
+## Data Source
+
+The data for this project come from this source: 
+http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har. Thank you for being very generous in allowing their data to be used for this kind of assignment.
+```
+
+
